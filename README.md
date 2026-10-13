@@ -18,7 +18,7 @@ SkillMatch is a Spring Boot & MySQL-based web application designed to connect st
 * **Backend:** Java, Spring Boot, Spring Data JPA
 * **Database:** MySQL
 * **Frontend:** HTML5, CSS3, JavaScript
-* **Tools & Environment:** VS Code / IntelliJ IDEA, Git, GitHub, Maven
+* **Tools & Environment:** VS Code , Git, GitHub, Maven
 
 ---
 
