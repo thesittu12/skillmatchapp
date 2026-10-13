@@ -1,0 +1,18 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "SkillmatchApplication",
+            "request": "launch",
+            "mainClass": "com.skillmatchapp.SkillmatchApplication",
+            "projectName": "skillmatchapp"
+        },
+        {
+            "type": "java",
+            "name": "SkillmatchappApplication",
+            "request": "launch",
+            "mainClass": "com.skillmatchapp.SkillmatchappApplication"
+        }
+    ]
+}

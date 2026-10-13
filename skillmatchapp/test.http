@@ -1,0 +1,8 @@
+POST http://localhost:8080/api/jobs
+Content-Type: application/json
+
+{
+  "title": "Java Developer",
+  "requiredSkills": "java,sql",
+  "company": "TechCorp"
+}

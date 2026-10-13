@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SkillMatch Portal</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
+        .container { max-width: 850px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        h2, h3 { color: #2c3e50; text-align: center; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #34495e; }
+        input, select, textarea { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; }
+        button { background-color: #3498db; color: white; border: none; padding: 10px 15px; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        button:hover { background-color: #2980b9; }
+        .hidden { display: none; }
+        .card { background: #fafbfc; border-left: 5px solid #2ecc71; padding: 15px; margin-top: 15px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+        .badge { background: #e8f8f5; color: #27ae60; padding: 4px 10px; border-radius: 4px; font-size: 13px; font-weight: bold; }
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; display: inline-block; }
+        .status-PENDING { background: #fef9e7; color: #f1c40f; }
+        .status-ACCEPTED { background: #e8f8f5; color: #27ae60; }
+        .status-REJECTED { background: #fadbd8; color: #c0392b; }
+        .nav-link { text-align: center; margin-top: 15px; cursor: pointer; color: #3498db; text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🚀 SkillMatch Portal</h2>
+
+    <!-- AUTH SECTION -->
+    <div id="authSection">
+        <div id="loginBox">
+            <h3>Login to Portal</h3>
+            <div class="form-group"><label>Email:</label><input type="email" id="loginEmail"></div>
+            <div class="form-group"><label>Password:</label><input type="password" id="loginPassword"></div>
+            <button onclick="loginUser()" style="width:100%;">Login</button>
+            <div class="nav-link" onclick="toggleAuth(true)">Don't have an account? Register here</div>
+        </div>
+
+        <div id="registerBox" class="hidden">
+            <h3>Create Account</h3>
+            <div class="form-group"><label>Full Name:</label><input type="text" id="regName"></div>
+            <div class="form-group"><label>Email:</label><input type="email" id="regEmail"></div>
+            <div class="form-group"><label>Password:</label><input type="password" id="regPassword"></div>
+            <div class="form-group">
+                <label>Register As:</label>
+                <select id="regRole">
+                    <option value="STUDENT">Student</option>
+                    <option value="RECRUITER">Recruiter</option>
+                </select>
+            </div>
+            <button onclick="registerUser()" style="width:100%;">Register</button>
+            <div class="nav-link" onclick="toggleAuth(false)">Already have an account? Login here</div>
+        </div>
+    </div>
+
+    <!-- STUDENT DASHBOARD -->
+    <div id="studentDashboard" class="hidden">
+        <h3>Student Dashboard</h3>
+        <p>Welcome, <span id="studentNameDisplay" style="font-weight:bold;"></span> (Student)</p>
+        
+        <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+            <h4>Update Your Skills</h4>
+            <div class="form-group">
+                <label>Skills (Comma separated):</label>
+                <input type="text" id="studentSkillsInput" placeholder="java, sql, spring">
+            </div>
+            <button onclick="updateStudentSkills()" style="background-color: #27ae60;">Save Skills</button>
+        </div>
+
+        <h3>Recommended Jobs & Internships</h3>
+        <button onclick="fetchStudentMatches()" style="background-color: #8e44ad;">Refresh Recommendations</button>
+        <div id="studentJobsList"></div>
+
+        <h3 style="margin-top: 30px;">My Applied Jobs & Status</h3>
+        <button onclick="fetchStudentApplications()" style="background-color: #2980b9;">Check Application Status</button>
+        <div id="studentApplicationsList"></div>
+
+        <button onclick="logout()" style="background-color: #e74c3c; margin-top: 30px; width:100%;">Logout</button>
+    </div>
+
+    <!-- RECRUITER DASHBOARD -->
+    <div id="recruiterDashboard" class="hidden">
+        <h3>Recruiter Dashboard</h3>
+        <p>Welcome, <span id="recruiterNameDisplay" style="font-weight:bold;"></span> (Recruiter)</p>
+
+        <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+            <h4>Post a New Job / Internship</h4>
+            <div class="form-group"><label>Job Title:</label><input type="text" id="jobTitle"></div>
+            <div class="form-group"><label>Company Name:</label><input type="text" id="jobCompany"></div>
+            <div class="form-group"><label>Required Skills (Comma separated):</label><input type="text" id="jobSkills" placeholder="java, sql"></div>
+            <button onclick="postJob()" style="background-color: #27ae60;">Post Job</button>
+        </div>
+
+        <h3>Manage Student Applications</h3>
+        <div class="form-group">
+            <label>Enter Job ID to view applicants:</label>
+            <input type="number" id="recruiterJobIdInput" placeholder="Enter Job ID">
+        </div>
+        <button onclick="fetchJobApplicants()" style="background-color: #d35400;">View Applicants</button>
+        <div id="recruiterApplicantsList"></div>
+
+        <button onclick="logout()" style="background-color: #e74c3c; margin-top: 30px; width:100%;">Logout</button>
+    </div>
+
+</div>
+
+<script>
+    let currentUser = null;
+
+    function toggleAuth(isRegister) {
+        document.getElementById('loginBox').classList.toggle('hidden', isRegister);
+        document.getElementById('registerBox').classList.toggle('hidden', !isRegister);
+    }
+
+    async function registerUser() {
+        const data = {
+            name: document.getElementById('regName').value,
+            email: document.getElementById('regEmail').value,
+            password: document.getElementById('regPassword').value,
+            role: document.getElementById('regRole').value
+        };
+
+        const res = await fetch('http://localhost:8080/api/auth/register', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+
+        if (res.ok) {
+            alert('Registration successful! Please login.');
+            toggleAuth(false);
+        } else {
+            alert('Registration failed!');
+        }
+    }
+
+    async function loginUser() {
+        const data = {
+            email: document.getElementById('loginEmail').value,
+            password: document.getElementById('loginPassword').value
+        };
+
+        const res = await fetch('http://localhost:8080/api/auth/login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+
+        const user = await res.json();
+        if (user && user.id) {
+            currentUser = user;
+            document.getElementById('authSection').classList.add('hidden');
+            
+            if (user.role === 'STUDENT') {
+                document.getElementById('studentDashboard').classList.remove('hidden');
+                document.getElementById('studentNameDisplay').innerText = user.name;
+                if(user.skills) document.getElementById('studentSkillsInput').value = user.skills;
+                fetchStudentMatches();
+                fetchStudentApplications();
+            } else {
+                document.getElementById('recruiterDashboard').classList.remove('hidden');
+                document.getElementById('recruiterNameDisplay').innerText = user.name;
+            }
+        } else {
+            alert('Invalid Email or Password!');
+        }
+    }
+
+    async function updateStudentSkills() {
+        const skills = document.getElementById('studentSkillsInput').value;
+        const res = await fetch(`http://localhost:8080/api/auth/student/${currentUser.id}/skills`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ skills: skills })
+        });
+        if (res.ok) {
+            alert('Skills updated successfully!');
+            fetchStudentMatches();
+        }
+    }
+
+    async function fetchStudentMatches() {
+        const res = await fetch(`http://localhost:8080/api/match/${currentUser.id}`);
+        const jobs = await res.json();
+        const listDiv = document.getElementById('studentJobsList');
+        
+        if (jobs.length === 0) {
+            listDiv.innerHTML = "<p>No matching jobs found. Update your skills!</p>";
+            return;
+        }
+
+        let html = "";
+        jobs.forEach(item => {
+            html += `<div class="card">
+                <h4>ID: ${item.job.id} | ${item.job.title} <span class="badge">${item.matchPercentage}% Match</span></h4>
+                <p><strong>Company:</strong> ${item.job.company}</p>
+                <p><strong>Required Skills:</strong> ${item.job.requiredSkills}</p>
+                <p><strong>Matched Skills:</strong> <span style="color:green; font-weight:bold;">${item.matchedSkills.join(', ')}</span></p>
+                <button onclick="applyJob(${item.job.id}, '${item.job.title}', '${item.job.company}', ${item.matchPercentage})" style="background-color: #27ae60;">Apply Now</button>
+            </div>`;
+        });
+        listDiv.innerHTML = html;
+    }
+
+    async function applyJob(jobId, jobTitle, company, matchPercentage) {
+        const data = {
+            studentId: currentUser.id,
+            studentName: currentUser.name,
+            studentEmail: currentUser.email,
+            jobId: jobId,
+            jobTitle: jobTitle,
+            companyName: company,
+            matchPercentage: matchPercentage
+        };
+
+        const res = await fetch('http://localhost:8080/api/applications/apply', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+
+        if (res.ok) {
+            alert('Successfully applied for the job!');
+            fetchStudentApplications();
+        } else {
+            alert('Failed to apply.');
+        }
+    }
+
+    async function fetchStudentApplications() {
+        const res = await fetch(`http://localhost:8080/api/applications/student/${currentUser.id}`);
+        const apps = await res.json();
+        const listDiv = document.getElementById('studentApplicationsList');
+
+        if (apps.length === 0) {
+            listDiv.innerHTML = "<p>You haven't applied to any jobs yet.</p>";
+            return;
+        }
+
+        let html = "";
+        apps.forEach(app => {
+            html += `<div class="card" style="border-left-color: #3498db;">
+                <h4>${app.jobTitle} (${app.companyName})</h4>
+                <p><strong>Match Score:</strong> ${app.matchPercentage}%</p>
+                <p><strong>Status:</strong> <span class="status-badge status-${app.status}">${app.status}</span></p>
+            </div>`;
+        });
+        listDiv.innerHTML = html;
+    }
+
+    async function postJob() {
+        const data = {
+            title: document.getElementById('jobTitle').value,
+            company: document.getElementById('jobCompany').value,
+            requiredSkills: document.getElementById('jobSkills').value
+        };
+
+        const res = await fetch('http://localhost:8080/api/jobs', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+
+        if (res.ok) {
+            alert('Job posted successfully!');
+            document.getElementById('jobTitle').value = '';
+            document.getElementById('jobCompany').value = '';
+            document.getElementById('jobSkills').value = '';
+        } else {
+            alert('Failed to post job.');
+        }
+    }
+
+    async function fetchJobApplicants() {
+        const jobId = document.getElementById('recruiterJobIdInput').value;
+        if (!jobId) {
+            alert('Please enter a Job ID');
+            return;
+        }
+
+        const res = await fetch(`http://localhost:8080/api/applications/job/${jobId}`);
+        const apps = await res.json();
+        const listDiv = document.getElementById('recruiterApplicantsList');
+
+        if (apps.length === 0) {
+            listDiv.innerHTML = "<p>No applicants found for this Job ID.</p>";
+            return;
+        }
+
+        let html = "";
+        apps.forEach(app => {
+            html += `<div class="card" style="border-left-color: #e67e22;">
+                <h4>Applicant: ${app.studentName} (${app.studentEmail})</h4>
+                <p><strong>Match Score:</strong> ${app.matchPercentage}%</p>
+                <p><strong>Status:</strong> <span class="status-badge status-${app.status}">${app.status}</span></p>
+                <div style="margin-top: 10px;">
+                    <button onclick="updateAppStatus(${app.id}, 'ACCEPTED')" style="background-color: #27ae60; width: auto; padding: 6px 12px;">Accept</button>
+                    <button onclick="updateAppStatus(${app.id}, 'REJECTED')" style="background-color: #c0392b; width: auto; padding: 6px 12px; margin-left: 10px;">Reject</button>
+                </div>
+            </div>`;
+        });
+        listDiv.innerHTML = html;
+    }
+
+    async function updateAppStatus(appId, status) {
+        const res = await fetch(`http://localhost:8080/api/applications/${appId}/status?status=${status}`, {
+            method: 'PUT'
+        });
+
+        if (res.ok) {
+            alert('Application status updated to ' + status);
+            fetchJobApplicants();
+        } else {
+            alert('Failed to update status.');
+        }
+    }
+
+    function logout() {
+        currentUser = null;
+        location.reload();
+    }
+</script>
+
+</body>
+</html>
